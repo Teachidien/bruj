@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Deal, Direction, dealCards, DIRECTIONS, VULNERABILITIES, Vulnerability, getSuitIcon } from '@/lib/bridge';
 import HandView from '@/components/HandView';
 import BiddingBox from '@/components/BiddingBox';
+import { BiddingSystem, getBotBid } from '@/lib/bot';
 
 export default function Home() {
   const [session, setSession] = useState<{ id: string } | null>(null);
@@ -13,6 +14,7 @@ export default function Home() {
   const [vul, setVul] = useState<Vulnerability>('None');
   const [bids, setBids] = useState<{ player: Direction, bid: string }[]>([]);
   const [loading, setLoading] = useState(false);
+  const [biddingSystem, setBiddingSystem] = useState<BiddingSystem>('Precision');
 
   // Default to showing all hands. On mobile, we might want to just scroll down.
   const [mobileActiveTab, setMobileActiveTab] = useState<'auction' | 'hands'>('auction');
@@ -62,6 +64,25 @@ export default function Home() {
     }
   };
 
+  const turnIndex = deal ? (DIRECTIONS.indexOf(dealer) + bids.length) % 4 : 0;
+  const currentTurn: Direction = deal ? DIRECTIONS[turnIndex] : 'N';
+  const isBotThinking = currentTurn !== 'S' && deal && !loading;
+
+  useEffect(() => {
+    if (isBotThinking && deal) {
+      const timer = setTimeout(() => {
+        if (deal) {
+          const botBid = getBotBid(deal[currentTurn], bids, biddingSystem);
+          handleBid(botBid);
+        }
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTurn, deal, loading, bids, biddingSystem]); // Intentionally omitting handleBid
+
+
+
   if (!deal) {
     return (
       <div className="app-container" style={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -78,14 +99,21 @@ export default function Home() {
     );
   }
 
-  const turnIndex = (DIRECTIONS.indexOf(dealer) + bids.length) % 4;
-  const currentTurn = DIRECTIONS[turnIndex];
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
       <header className="page-header">
         <h2 style={{ fontSize: '1.5rem' }}>Practice</h2>
         <div className="header-actions">
+          <select 
+            className="glass-panel" 
+            style={{ padding: '0.4rem 0.75rem', fontSize: '0.85rem', color: 'var(--text-primary)', background: 'var(--panel-bg)', cursor: 'pointer' }} 
+            value={biddingSystem}
+            onChange={(e) => setBiddingSystem(e.target.value as BiddingSystem)}
+          >
+            <option value="Precision" style={{ color: 'black' }}>Precision</option>
+            <option value="SAYC" style={{ color: 'black' }}>SAYC</option>
+            <option value="2/1 GF" style={{ color: 'black' }}>2/1 GF</option>
+          </select>
           <span className="glass-panel" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Dlr: <strong style={{ color: 'white' }}>{dealer}</strong></span>
           <span className="glass-panel" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}>Vul: <strong style={{ color: vul === 'All' || vul === 'NS' || vul === 'EW' ? 'var(--red-text)' : 'white' }}>{vul}</strong></span>
           <button className="button primary" style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }} onClick={startNewBoard}>Refresh</button>
@@ -171,7 +199,9 @@ export default function Home() {
 
         {/* Bidding Sidebar */}
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-           <BiddingBox onBid={handleBid} />
+           <div style={{ pointerEvents: currentTurn !== 'S' ? 'none' : 'auto', opacity: currentTurn !== 'S' ? 0.5 : 1, transition: 'opacity 0.3s' }}>
+             <BiddingBox onBid={handleBid} />
+           </div>
            
            <div className="glass-panel" style={{ marginTop: '1.5rem', padding: '1.25rem', width: '100%', maxWidth: '450px' }}>
              <h4 style={{ marginBottom: '1rem', color: 'white', fontSize: '1rem' }}>Info</h4>
