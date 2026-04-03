@@ -115,8 +115,8 @@ export default function Home() {
         <div style={{ display: mobileActiveTab === 'auction' ? 'block' : 'none' }}>
            {/* On mobile, standard table is too wide. We use the updated .table-grid */}
            <div className="table-grid">
-               <div className="pos-n"><HandView player="N" hand={deal['N']} /></div>
-               <div className="pos-w"><HandView player="W" hand={deal['W']} /></div>
+               <div className="pos-n"><HandView player="N" hand={deal['N']} isHidden={true} /></div>
+               <div className="pos-w"><HandView player="W" hand={deal['W']} isHidden={true} /></div>
                
                {/* Center Auction */}
                <div className="glass-panel pos-c" style={{ height: '300px', padding: '1rem', display: 'flex', flexDirection: 'column', width: '100%' }}>
@@ -156,17 +156,17 @@ export default function Home() {
                  </div>
                </div>
 
-               <div className="pos-e"><HandView player="E" hand={deal['E']} /></div>
+               <div className="pos-e"><HandView player="E" hand={deal['E']} isHidden={true} /></div>
                <div className="pos-s"><HandView player="S" hand={deal['S']} /></div>
            </div>
         </div>
         
         {/* Mobile secondary tab for seeing hands stacked (Alternative View) */}
         <div style={{ display: mobileActiveTab === 'hands' ? 'flex' : 'none', flexDirection: 'column', gap: '1rem' }} className="mobile-only-hands">
-            <HandView player="N" hand={deal['N']} />
-            <HandView player="E" hand={deal['E']} />
+            <HandView player="N" hand={deal['N']} isHidden={true} />
+            <HandView player="E" hand={deal['E']} isHidden={true} />
             <HandView player="S" hand={deal['S']} />
-            <HandView player="W" hand={deal['W']} />
+            <HandView player="W" hand={deal['W']} isHidden={true} />
         </div>
 
         {/* Bidding Sidebar */}
